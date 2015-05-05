@@ -1,0 +1,49 @@
+//
+//  DataStorage.h
+//  PhotoStack
+//
+//  Created by Vakul on 12/19/13.
+//  Copyright (c) 2013 iAppTechnologies. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import <SystemConfiguration/SystemConfiguration.h>
+#import <netinet/in.h>
+#import <sys/socket.h>
+
+#import "ATMHud.h"
+#import "ATMHudDelegate.h"
+#import "DataStorage.h"
+#import "LoginDetail.h"
+#import "VSWebServices.h"
+
+#define LIKE_IMAGE_ICON   [UIImage imageNamed:@"like"]
+#define UNLIKE_IMAGE_ICON [UIImage imageNamed:@"unlike"]
+#define STAR_IMAGE_ICON   [UIImage imageNamed:@"star"]
+#define UNSTAR_IMAGE_ICON [UIImage imageNamed:@"unstar"]
+
+
+@interface DataStorage : NSObject
+
++(DataStorage *)sharedStorage;
+
+@property (nonatomic) BOOL isFromGallery;
+
+-(BOOL)isInternetAvailable;
+-(BOOL)isIOS7;
+-(BOOL)isIPhone5;
+
+-(BOOL)isCameraAvailable;
+-(BOOL)isPhotoGalleryAvailable;
+-(BOOL)validateEmail:(NSString *)inputText;
+
+-(UIImage *)imageFromView:(UIView *)view;
+-(UIImage *)backgroundImage;
+
+-(UIColor *)applicationBackgroundColor;
+-(UIColor *)applicationBlueColor;
+-(UIColor *)applicationGreenColor;
+
+
+
+@end

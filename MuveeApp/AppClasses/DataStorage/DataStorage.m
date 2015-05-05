@@ -1,0 +1,157 @@
+//
+//  DataStorage.m
+//  PhotoStack
+//
+//  Created by Vakul on 12/19/13.
+//  Copyright (c) 2013 iAppTechnologies. All rights reserved.
+//
+
+#import "DataStorage.h"
+
+@implementation DataStorage
+@synthesize isFromGallery = _isFromGallery;
+
+static DataStorage *storage = nil;
++(DataStorage *)sharedStorage
+{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        storage = [[DataStorage alloc] init];
+    });
+    
+    return storage;
+}
+
+#pragma mark - BOOL 
+-(BOOL)isInternetAvailable
+{
+    struct sockaddr_in zeroAddress;
+    bzero(&zeroAddress, sizeof(zeroAddress));
+    zeroAddress.sin_len = sizeof(zeroAddress);
+    zeroAddress.sin_family = AF_INET;
+    
+    SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithAddress(kCFAllocatorDefault, (const struct sockaddr *) &zeroAddress);
+    
+    if(reachability != NULL)
+    {
+        // NetworkStatus retVal = NotReachable
+        SCNetworkReachabilityFlags flags;
+        
+        if(SCNetworkReachabilityGetFlags(reachability, &flags))
+        {
+            if ((flags & kSCNetworkReachabilityFlagsReachable) == 0)
+            {
+                // if target host is not reachable
+                return NO;
+            }
+            
+            if ((flags & kSCNetworkReachabilityFlagsConnectionRequired) == 0)
+            {
+                // if target host is reachable and no connection is required
+                // then we'll assume (for now) that your on Wi-Fi
+                return YES;
+            }
+            
+            
+            if ((((flags & kSCNetworkReachabilityFlagsConnectionOnDemand ) != 0) ||
+                 (flags & kSCNetworkReachabilityFlagsConnectionOnTraffic) != 0))
+            {
+                // ... and the connection is on-demand (or on-traffic) if the
+                //     calling application is using the CFSocketStream or higher APIs
+                
+                if ((flags & kSCNetworkReachabilityFlagsInterventionRequired) == 0)
+                {
+                    // ... and no [user] intervention is needed
+                    return YES;
+                }
+            }
+            
+            if ((flags & kSCNetworkReachabilityFlagsIsWWAN) == kSCNetworkReachabilityFlagsIsWWAN)
+            {
+                // ... but WWAN connections are OK if the calling application
+                //     is using the CFNetwork (CFSocketStream?) APIs.
+                return YES;
+            }
+        }
+    }
+    
+    return NO;
+}
+
+-(BOOL)isIOS7
+{
+    return ([[UIDevice currentDevice] systemVersion].floatValue >= 7.0);
+}
+
+-(BOOL)isIPhone5
+{
+    return ([[UIScreen mainScreen] applicationFrame].size.height > 480.0);
+}
+
+-(BOOL)isCameraAvailable
+{
+   return [UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera];
+}
+
+-(BOOL)isPhotoGalleryAvailable
+{
+    return [UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypePhotoLibrary];
+}
+
+
+#pragma mark - Email Validation
+-(BOOL)validateEmail:(NSString *)inputText
+{
+    NSString *emailRegex = @"[A-Z0-9a-z][A-Z0-9a-z._%+-]*@[A-Za-z0-9][A-Za-z0-9.-]*\\.[A-Za-z]{2,6}";
+    NSPredicate *emailTest = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", emailRegex];
+    NSRange aRange;
+    if([emailTest evaluateWithObject:inputText]) {
+        aRange = [inputText rangeOfString:@"." options:NSBackwardsSearch range:NSMakeRange(0, [inputText length])];
+        int indexOfDot = aRange.location;
+        //NSLog(@"aRange.location:%d - %d",aRange.location, indexOfDot);
+        if(aRange.location != NSNotFound) {
+            NSString *topLevelDomain = [inputText substringFromIndex:indexOfDot];
+            topLevelDomain = [topLevelDomain lowercaseString];
+            //NSLog(@"topleveldomains:%@",topLevelDomain);
+            NSSet *TLD;
+            TLD = [NSSet setWithObjects:@".aero", @".asia", @".biz", @".cat", @".com", @".coop", @".edu", @".gov", @".info", @".int", @".jobs", @".mil", @".mobi", @".museum", @".name", @".net", @".org", @".pro", @".tel", @".travel", @".ac", @".ad", @".ae", @".af", @".ag", @".ai", @".al", @".am", @".an", @".ao", @".aq", @".ar", @".as", @".at", @".au", @".aw", @".ax", @".az", @".ba", @".bb", @".bd", @".be", @".bf", @".bg", @".bh", @".bi", @".bj", @".bm", @".bn", @".bo", @".br", @".bs", @".bt", @".bv", @".bw", @".by", @".bz", @".ca", @".cc", @".cd", @".cf", @".cg", @".ch", @".ci", @".ck", @".cl", @".cm", @".cn", @".co", @".cr", @".cu", @".cv", @".cx", @".cy", @".cz", @".de", @".dj", @".dk", @".dm", @".do", @".dz", @".ec", @".ee", @".eg", @".er", @".es", @".et", @".eu", @".fi", @".fj", @".fk", @".fm", @".fo", @".fr", @".ga", @".gb", @".gd", @".ge", @".gf", @".gg", @".gh", @".gi", @".gl", @".gm", @".gn", @".gp", @".gq", @".gr", @".gs", @".gt", @".gu", @".gw", @".gy", @".hk", @".hm", @".hn", @".hr", @".ht", @".hu", @".id", @".ie", @" No", @".il", @".im", @".in", @".io", @".iq", @".ir", @".is", @".it", @".je", @".jm", @".jo", @".jp", @".ke", @".kg", @".kh", @".ki", @".km", @".kn", @".kp", @".kr", @".kw", @".ky", @".kz", @".la", @".lb", @".lc", @".li", @".lk", @".lr", @".ls", @".lt", @".lu", @".lv", @".ly", @".ma", @".mc", @".md", @".me", @".mg", @".mh", @".mk", @".ml", @".mm", @".mn", @".mo", @".mp", @".mq", @".mr", @".ms", @".mt", @".mu", @".mv", @".mw", @".mx", @".my", @".mz", @".na", @".nc", @".ne", @".nf", @".ng", @".ni", @".nl", @".no", @".np", @".nr", @".nu", @".nz", @".om", @".pa", @".pe", @".pf", @".pg", @".ph", @".pk", @".pl", @".pm", @".pn", @".pr", @".ps", @".pt", @".pw", @".py", @".qa", @".re", @".ro", @".rs", @".ru", @".rw", @".sa", @".sb", @".sc", @".sd", @".se", @".sg", @".sh", @".si", @".sj", @".sk", @".sl", @".sm", @".sn", @".so", @".sr", @".st", @".su", @".sv", @".sy", @".sz", @".tc", @".td", @".tf", @".tg", @".th", @".tj", @".tk", @".tl", @".tm", @".tn", @".to", @".tp", @".tr", @".tt", @".tv", @".tw", @".tz", @".ua", @".ug", @".uk", @".us", @".uy", @".uz", @".va", @".vc", @".ve", @".vg", @".vi", @".vn", @".vu", @".wf", @".ws", @".ye", @".yt", @".za", @".zm", @".zw", nil];
+            
+            if(topLevelDomain != nil && ([TLD containsObject:topLevelDomain])) {
+                //NSLog(@"TLD contains topLevelDomain:%@",topLevelDomain);
+                return TRUE;
+            }
+            /*else {
+             NSLog(@"TLD DOEST NOT contains topLevelDomain:%@",topLevelDomain);
+             }*/
+            
+        }
+    }
+    if ([inputText length]==0) {
+        return   TRUE;
+    }
+    return FALSE;
+}
+
+
+#pragma mark - ScreenShot from View
+-(UIImage *)imageFromView:(UIView *)view
+{
+    UIGraphicsBeginImageContextWithOptions(view.bounds.size, view.opaque, 0.0);
+    [view.layer renderInContext:UIGraphicsGetCurrentContext()];
+    UIImage *saveImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return saveImage;
+}
+
+#pragma mark - Background Image
+-(UIImage *)backgroundImage
+{
+    if ([self isIPhone5]) {
+        return [UIImage imageNamed:@"bg5"];
+    }
+    else {
+        return [UIImage imageNamed:@"bg"];
+    }
+}
+
+@end
